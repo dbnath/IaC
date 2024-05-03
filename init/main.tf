@@ -9,14 +9,14 @@ terraform {
 
 provider "azurerm" {
   subscription_id = "b0448874-98ba-4e20-be2d-b9629a3aca74"
-  tenant_id = "b41b72d0-4e9f-4c26-8a69-f949f367c91d"
-  client_id = "30316a8c-2e29-4f3d-b44e-ba156c4f005b"
-  client_secret = "M9B8Q~vfpofsR2Q0~3dRnTpJLs4mfWpti.d4YaKY"
+  tenant_id = ""
+  client_id = ""
+  client_secret = ""
   features {}
 }
 
 resource "azurerm_resource_group" "resource_group" {
-    name = "dn-resource-group"
+    name = "az-dn-group"
     location = "East US 2"
 }
 
@@ -57,12 +57,6 @@ resource "azurerm_monitor_action_group" "monitor_action_group" {
   resource_group_name = azurerm_resource_group.resource_group.name
   location = azurerm_resource_group.resource_group.location
   depends_on = [ azurerm_storage_account.storage_account ]
-
-  arm_role_receiver {
-    name                    = "armroleaction"
-    role_id                 = "de139f84-1756-47ae-9be6-808fbbe84772"
-    use_common_alert_schema = true
-  }
 }
 
 resource "azurerm_consumption_budget_resource_group" "consumption_budget_resource_group" {
@@ -73,8 +67,8 @@ resource "azurerm_consumption_budget_resource_group" "consumption_budget_resourc
   time_grain = "Monthly"
 
   time_period {
-    start_date = "2023-12-01T00:00:00Z"
-    end_date = "2024-01-28T00:00:00Z"
+    start_date = "2024-01-01T00:00:00Z"
+    end_date = "2024-02-01T00:00:00Z"
   }
 
   filter {
@@ -105,4 +99,27 @@ resource "azurerm_consumption_budget_resource_group" "consumption_budget_resourc
     ]
   }
   depends_on = [ azurerm_monitor_action_group.monitor_action_group ]
+}
+
+
+resource "azurerm_virtual_network" "appnetwork" {
+  name                = "dn-network"
+  location            = azurerm_resource_group.resource_group.location
+  resource_group_name = azurerm_resource_group.resource_group.name
+  address_space       = ["10.0.0.0/23"]
+
+  subnet {
+    name           = "dn-subnet-default"
+    address_prefix = "10.0.0.0/24"
+  }
+
+  subnet {
+    name           = "dn-subnet-bastion"
+    address_prefix = "10.0.1.0/26"    
+  }
+
+  subnet {
+    name           = "dn-subnet-firewall"
+    address_prefix = "10.0.1.64/26"    
+  }
 }
